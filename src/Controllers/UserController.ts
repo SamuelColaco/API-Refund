@@ -1,0 +1,83 @@
+
+import { Request, Response } from "express"
+import { prisma } from "../database/prisma"
+import z from "zod"
+import { AppError } from "../utils/AppError"
+
+interface RequestBodyUpdate{
+    name: string
+    email: string
+    password: string
+}
+
+export class UserController{
+
+    async index(req: Request, res: Response){
+
+        const users = await prisma.user.findMany()
+
+        res.status(200).json({ message: users.length > 0 ? users : "Não tem usuários cadastrados"})
+    }
+
+    async create(req: Request, res: Response){
+
+        const bodySchema = z.object({
+            name: z.string(),
+            email: z.string().email(),
+            password: z.string().min(6).trim()
+        })
+
+        const { name, email, password } = bodySchema.parse(req.body)
+
+        const userExist = await prisma.user.findFirst({ where: { email }})
+
+        if(userExist){
+            throw new AppError("Usuário já cadastrado")
+        }
+
+        await prisma.user.create({ data: { name, email, password }})
+
+        res.status(201).json({ message: "Usuário cadastrado"})
+
+    }
+
+    async update(req: Request, res: Response){
+
+        const paramSchema = z.object({
+            id: z.string().uuid()
+        })
+
+        const { id } = paramSchema.parse(req.params)
+
+        const { ...all } = req.body as RequestBodyUpdate
+
+        const userExist = await prisma.user.findFirst({ where: { id }})
+
+        if(!userExist){
+            throw new AppError("Usuário não é cadastrado")
+        }
+
+        await prisma.user.update({ where: { id }, data: { ...all }})
+
+        res.status(200).json({ message: "Usuário atualizado com sucesso" })
+    }
+
+    async deleteUser(req: Request, res: Response){
+
+        const paramSchema = z.object({
+            id: z.string().uuid()
+        })
+
+        const { id } = paramSchema.parse(req.params)
+
+        const userExist = await prisma.user.findFirst({ where: { id }})
+
+        if(!userExist){
+            throw new AppError("Usuário não é cadastrado")
+        }
+
+        await prisma.user.delete({ where: { id }})
+
+        res.status(200).json( { message: "Usuário deletado"} )
+    }
+}
