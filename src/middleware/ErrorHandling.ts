@@ -1,17 +1,19 @@
 
-import { Request, Response, NextFunction } from "express"
+import { Request, Response, NextFunction, ErrorRequestHandler } from "express"
 import { AppError } from "../utils/AppError";
 import { ZodError }  from "zod"
 
 
-export function ErrorHandling(err: any, req:Request, res: Response, _: NextFunction){
+export const errorHandling: ErrorRequestHandler = (err, req, res, next) => {
 
     if(err instanceof AppError){
-        return res.status(err.statusCode).json({ message: err.message})
+        res.status(err.statusCode).json({ message: err.message})
+        return
     }
 
     if(err instanceof ZodError){
-        return res.status(400).json({ message: err.format()})
+        res.status(400).json({ message: "Erro de validação", issues: err.format()})
+        return
     }
 
     res.status(500).json({ message: "Erro interno do servidor"})
