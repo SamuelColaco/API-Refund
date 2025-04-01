@@ -13,7 +13,7 @@ export class SessionController{
 
         const bodySchema = z.object({
             email: z.string().trim().email({message: "Email inválido"}),
-            password: z.string().trim().min(6, { message: "Senha inválida"})
+            password: z.string()
         })
 
         const { email, password } = bodySchema.parse(req.body)
@@ -21,11 +21,11 @@ export class SessionController{
         const userExist = await prisma.user.findFirst({ where: { email }})
 
         if(!userExist){
-            throw new AppError("Usuário não cadastrado")
+            throw new AppError("Usuário não cadastrado", 404)
         }
 
         if(!(await compare(userExist.password, password))){
-            throw new AppError("Email e/ou senha errados")
+            throw new AppError("Email e/ou senha errados", 401)
         }
 
         const { secret, expiresIn } = authConfig.jwt
