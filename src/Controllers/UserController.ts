@@ -4,6 +4,7 @@ import { prisma } from "../database/prisma"
 import z from "zod"
 import { AppError } from "../utils/AppError"
 import { UserRole } from "@prisma/client"
+import { hash } from "bcrypt"
 
 interface RequestBodyUpdate{
     name: string
@@ -37,7 +38,9 @@ export class UserController{
             throw new AppError("Usuário já cadastrado")
         }
 
-        await prisma.user.create({ data: { name, email, password, role }})
+        const passwordHash = await hash(password, 8)
+
+        await prisma.user.create({ data: { name, email, password: passwordHash, role }})
 
         res.status(201).json({ message: "Usuário cadastrado"})
 
