@@ -24,15 +24,15 @@ export class SessionController{
             throw new AppError("Usuário não cadastrado", 404)
         }
 
-        if(!(await compare(userExist.password, password))){
+        if(!(await compare(password, userExist.password))){
             throw new AppError("Email e/ou senha errados", 401)
         }
 
         const { secret, expiresIn } = authConfig.jwt
 
         const token = sign({ role: userExist.role ?? "employee"}, secret, {
-            expiresIn,
-            subject: userExist.id
+            subject: userExist.id,
+            expiresIn
         })
 
         res.status(201).json({ "token": token })
