@@ -3,6 +3,7 @@ import { Request, Response } from "express"
 import { prisma } from "../database/prisma"
 import z from "zod"
 import { AppError } from "../utils/AppError"
+import { UserRole } from "@prisma/client"
 
 interface RequestBodyUpdate{
     name: string
@@ -23,11 +24,12 @@ export class UserController{
 
         const bodySchema = z.object({
             name: z.string(),
-            email: z.string().email(),
-            password: z.string().min(6).trim()
+            email: z.string().email({message: "Email inválido"}).toLowerCase(),
+            password: z.string().min(6, {message: "Senha inválida"}).trim(),
+            role: z.enum([UserRole.employee, UserRole.manager]).default(UserRole.employee)
         })
 
-        const { name, email, password } = bodySchema.parse(req.body)
+        const { name, email, password, role } = bodySchema.parse(req.body)
 
         const userExist = await prisma.user.findFirst({ where: { email }})
 
@@ -35,7 +37,7 @@ export class UserController{
             throw new AppError("Usuário já cadastrado")
         }
 
-        await prisma.user.create({ data: { name, email, password }})
+        await prisma.user.create({ data: { name, email, password, role }})
 
         res.status(201).json({ message: "Usuário cadastrado"})
 
