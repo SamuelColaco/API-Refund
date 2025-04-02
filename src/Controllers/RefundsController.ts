@@ -15,10 +15,37 @@ interface RequestUpdateBody{
 export class RefundsControllers{
 
     async index(req: Request, res: Response){
-
         const refunds = await prisma.refunds.findMany()
 
         res.status(200).json({ "message": refunds.length > 0 ? refunds : "Não tem reembolsos"})
+    }
+
+    async indexById(req: Request, res: Response){
+
+        const paramSchema = z.object({
+            id: z.string().uuid()
+        })
+
+        const { id } =  paramSchema.parse(req.params)
+
+        const userExist = await prisma.user.findFirst({ where: { id }})
+
+        if(!userExist){
+            throw new AppError("Usuário não encontrado", 404)
+        }
+
+        if(!req.user?.id){
+            throw new AppError("Usuário não autenticado", 401)
+        }
+
+        if(req.user.id !== userExist.id){
+            throw new AppError("Você não tem permissão para ver de outro usuário", 401)
+        }
+
+        const refundExist = await prisma.refunds.findMany({ where: { userId: id }})
+
+        res.status(200).json({"refunds": refundExist.length > 0 ? refundExist : "Não tem reembolsos"})
+
     }
 
     async create(req: Request, res: Response){
