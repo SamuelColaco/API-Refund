@@ -3,6 +3,14 @@ import { Request, Response } from "express"
 import { prisma } from "../database/prisma"
 import { Category } from "@prisma/client"
 import z from "zod"
+import { AppError } from "../utils/AppError"
+
+interface RequestUpdateBody{
+    name: string
+    amount: number
+    category: Category
+    filename: string
+}
 
 export class RefundsControllers{
 
@@ -17,12 +25,61 @@ export class RefundsControllers{
 
         const bodySchema = z.object({
             name: z.string().trim().min(2, { message: "informe o nome do reembolso"}),
-            amout: z.number().positive({message: "Valor tem que ser positivo"}),
+            amount: z.number().positive({message: "Valor tem que ser positivo"}),
             category: z.enum([Category.accommodation, Category.food, Category.others, Category.services, Category.transport]),
             filename: z.string().min(20)
         })
 
-        const { name, amout, category, filename} = bodySchema.parse(req.body)
+        const { name, amount, category, filename} = bodySchema.parse(req.body)
 
+        if(!req.user?.id){
+            throw new AppError("Usuário não autenticado", 401)
+        }
+
+        await prisma.refunds.create({ data: { name, amount, category, filename, userId: req.user.id }})
+
+        res.status(201).json({ message: "Solicitação feita"})
+    }
+
+    async update(req: Request, res: Response){
+
+        const paramSchema = z.object({
+            id: z.string().uuid()
+        })
+
+        const { id } = paramSchema.parse(req.params)
+
+
+        const { ...all } = req.body as RequestUpdateBody
+
+        const refundExist = await prisma.refunds.findFirst({ where: { id }})
+
+        if(!refundExist){
+            throw new AppError("Esse reembolso não existe", 404)
+        }
+
+        await prisma.refunds.update({ where: { id }, data: { ...all }})
+
+        res.status(200).json({ message: "Update feito com sucesso"})
+
+    }
+
+    async deleteRefund(req: Request, res: Response){
+
+        const paramSchema = z.object({
+            id: z.string().uuid()
+        })
+
+        const { id } = paramSchema.parse(req.params)
+
+        const refundExist = await prisma.refunds.findFirst({ where: { id }})
+
+        if(!refundExist){
+            throw new AppError("Esse reembolso não existe", 404)
+        }
+
+        await prisma.refunds.delete({ where: { id }})
+
+        res.status(200).json({ message: "Deletado com sucesso"})
     }
 }
