@@ -6,12 +6,6 @@ import { AppError } from "../utils/AppError"
 import { UserRole } from "@prisma/client"
 import { hash } from "bcrypt"
 
-interface RequestBodyUpdate{
-    name: string
-    email: string
-    password: string
-}
-
 export class UserController{
 
     async index(req: Request, res: Response){
@@ -52,9 +46,15 @@ export class UserController{
             id: z.string().uuid()
         })
 
+        const bodySchema = z.object({
+            name: z.string().optional(),
+            email: z.string().email().optional(),
+            password: z.string().min(6, { message: "Senha com menos que seis caracteres"}).optional()
+        })
+
         const { id } = paramSchema.parse(req.params)
 
-        const { ...all } = req.body as RequestBodyUpdate
+        const { password, ...all } = bodySchema.parse(req.body)
 
         const userExist = await prisma.user.findFirst({ where: { id }})
 
@@ -62,7 +62,9 @@ export class UserController{
             throw new AppError("Usuário não é cadastrado")
         }
 
-        await prisma.user.update({ where: { id }, data: { ...all }})
+        const passwordHash =  await hash(String(password), 8)
+
+        await prisma.user.update({ where: { id }, data: { password: passwordHash ? passwordHash : userExist.password, ...all }})
 
         res.status(200).json({ message: "Usuário atualizado com sucesso" })
     }

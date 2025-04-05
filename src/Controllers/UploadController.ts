@@ -4,7 +4,6 @@ import { Request, Response } from "express"
 import upload from "../config/upload"
 import  { z, ZodError } from "zod"
 import { DiskStorage } from "../providers/DiskStorage"
-import { runInNewContext } from "vm"
 import { AppError } from "../utils/AppError"
 
 export class UploadController{
@@ -18,11 +17,11 @@ export class UploadController{
                 size: z.number().positive().refine((size) => upload.MAX_FILE_SIZE, "Arquivo de tamanho inválido, máximo 3 megas")
             }).passthrough()
 
-            const { ...file } = fileSchema.parse(req.file)
+            const file = fileSchema.parse(req.file)
 
             const filename = await diskStorage.saveFile(file.filename)
 
-            res.status(201).json({ file: filename })
+            res.status(201).json({ filename })
             
         } catch (error) {
             if(error instanceof ZodError){
