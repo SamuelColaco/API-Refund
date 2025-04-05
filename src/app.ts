@@ -6,6 +6,7 @@ import { errorHandling } from "./middleware/ErrorHandling"
 import { userRoutes } from "./routes/userRoutes"
 import { sessionRoutes } from "./routes/sessionRoutes"
 import { refundRoutes } from "./routes/refundRoutes"
+import { uploadRoutes } from "./routes/uploadRoutes"
 
 export const app = express()
 
@@ -15,5 +16,6 @@ app.use(express.json())
 app.use(userRoutes)
 app.use(sessionRoutes)
 app.use(refundRoutes)
+app.use(uploadRoutes)
 
 app.use(errorHandling)

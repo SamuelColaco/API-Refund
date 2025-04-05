@@ -2,7 +2,7 @@
 import { Request, Response } from "express"
 
 import upload from "../config/upload"
-import z, { ZodError } from "zod"
+import  { z, ZodError } from "zod"
 import { DiskStorage } from "../providers/DiskStorage"
 import { runInNewContext } from "vm"
 import { AppError } from "../utils/AppError"
