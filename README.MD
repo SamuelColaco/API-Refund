@@ -139,7 +139,7 @@ A **API Refund** é uma aplicação desenvolvida para gerenciar solicitações d
     Header: 
         Authorization: Bearer seu_token_aqui
     Reposta:{
-        "meals": [
+        "refunds": [
             {
                 "id": "Id do reembolso  em  formato UUID",
                 "userId": "Id do usuário que cadastrou o reembolso",
